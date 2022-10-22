@@ -1,0 +1,6 @@
+description=${project.description}
+version=1.0-SNAPSHOT
+name=TestProj
+classname=org.opensearch.plugin.aknn.AknnPlugin
+java.version=1.8
+opensearch.version=1.0.0
