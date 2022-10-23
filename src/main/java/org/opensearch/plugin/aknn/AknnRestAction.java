@@ -1,17 +1,23 @@
 package org.opensearch.plugin.aknn;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.example.JsonInfo;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.node.NodeClient;
 import org.opensearch.common.Table;
 import org.opensearch.common.xcontent.XContentBuilder;
+import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.rest.BytesRestResponse;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.rest.RestStatus;
 import org.opensearch.rest.action.cat.AbstractCatAction;
+import org.opensearch.search.SearchHit;
+import org.opensearch.search.SearchHits;
+import org.opensearch.search.builder.SearchSourceBuilder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
+import java.util.*;
 
 public class AknnRestAction extends AbstractCatAction {
     @Override
@@ -21,8 +27,32 @@ public class AknnRestAction extends AbstractCatAction {
         if(restRequest.path().endsWith("get")){
             return channel -> {
                 try {
+                    SearchRequest searchRequest = new SearchRequest("test");
+                    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+                    searchSourceBuilder.query(QueryBuilders.matchAllQuery());
+
+                    searchRequest.source(searchSourceBuilder);
+
+                    SearchResponse n = nodeClient.search(searchRequest).get();
+
+                    SearchHits hits = n.getHits();
+
+                    SearchHit[] searchHits = hits.getHits();
+
+
+                    List<Map<String,Object>> sourceAsMap = new ArrayList<>();
+                    String sourceAsString = null;
+                    for (SearchHit hit : searchHits) {
+                        sourceAsMap.add(hit.getSourceAsMap());
+                    }
+
+                    int kl = sourceAsMap.stream()
+                            .filter(v -> (int) v.get("ups_adv_output_voltage") != 0)
+                            .mapToInt(v -> (int) v.get("ups_adv_output_voltage"))
+                            .max().orElseThrow(NoSuchElementException::new);
+
                     XContentBuilder builder = channel.newBuilder();
-                    builder.startObject().field("getRequest", "Hii! Hello World Example Get Request").endObject();
+                    builder.startObject().field("getRequest", sourceAsMap).endObject();
                     channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
                 } catch (final Exception e) {
                     channel.sendResponse(new BytesRestResponse(channel, e));
@@ -32,10 +62,10 @@ public class AknnRestAction extends AbstractCatAction {
         // Implementation of the task for the route "/_hello/post"
         else{
             return channel -> {
-                String name = restRequest.hasContent()? restRequest.contentParser().mapStrings().toString() : "";
+
                 try {
                     XContentBuilder builder = channel.newBuilder();
-                    builder.startObject().field("postRequest", "Hii! Hello World Example Get Request "+ name).endObject();
+                    builder.startObject().field("postRequest", "post").endObject();
                     channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
                 } catch (final Exception e) {
                     channel.sendResponse(new BytesRestResponse(channel, e));

@@ -1,3 +1,4 @@
 org/example/Main.class
+org/example/JsonInfo.class
 org/opensearch/plugin/aknn/AknnRestAction.class
 org/opensearch/plugin/aknn/AknnPlugin.class
