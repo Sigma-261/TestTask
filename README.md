@@ -12,3 +12,4 @@ java -jar TestTaskProj-1.0-SNAPSHOT-jar-with-dependencies.jar values testData.js
 The function for finding unique value [host] is called
 values: [192.168.11.9, 192.168.10.8]
 ```
+Вывод: Познакомился с библиотекой для парсинга json файлов. Познакомился с билдером maven и как создавать jar и fat jar. Узнал, как просто можно взаимодействовать с листами без циклов.
