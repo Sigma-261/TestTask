@@ -2,7 +2,10 @@ package org.opensearch.plugin.aknn;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import org.example.JsonInfo;
+import org.opensearch.action.admin.indices.create.CreateIndexRequest;
+import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.node.NodeClient;
@@ -17,7 +20,11 @@ import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.builder.SearchSourceBuilder;
 
+import java.io.InputStream;
+import java.io.Reader;
+import java.lang.reflect.Type;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class AknnRestAction extends AbstractCatAction {
     @Override
@@ -30,29 +37,45 @@ public class AknnRestAction extends AbstractCatAction {
                     SearchRequest searchRequest = new SearchRequest("test");
                     SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
                     searchSourceBuilder.query(QueryBuilders.matchAllQuery());
-
+                    searchSourceBuilder.size(10000);
                     searchRequest.source(searchSourceBuilder);
 
-                    SearchResponse n = nodeClient.search(searchRequest).get();
+                    SearchResponse searchClient = nodeClient.search(searchRequest).get();
 
-                    SearchHits hits = n.getHits();
+                    SearchHits hits = searchClient.getHits();
 
                     SearchHit[] searchHits = hits.getHits();
 
-
                     List<Map<String,Object>> sourceAsMap = new ArrayList<>();
-                    String sourceAsString = null;
-                    for (SearchHit hit : searchHits) {
+
+                    for (SearchHit hit : searchHits) {;
                         sourceAsMap.add(hit.getSourceAsMap());
                     }
 
-                    int kl = sourceAsMap.stream()
+                    //get mav value
+                    int max = sourceAsMap.stream()
                             .filter(v -> (int) v.get("ups_adv_output_voltage") != 0)
                             .mapToInt(v -> (int) v.get("ups_adv_output_voltage"))
                             .max().orElseThrow(NoSuchElementException::new);
 
+                    //get avg value
+                    double avg = sourceAsMap.stream()
+                            .filter(v -> (int) v.get("ups_adv_battery_run_time_remaining") != 0)
+                            .mapToInt(v -> (int) v.get("ups_adv_battery_run_time_remaining"))
+                            .average()
+                            .orElse(0.0);
+
+                    //get unique values
+                    List<String> values = sourceAsMap.stream()
+                            .filter(v -> v.get("host") != null)
+                            .map(v -> (String) v.get("host"))
+                            .distinct()
+                            .collect(Collectors.toList());
+
                     XContentBuilder builder = channel.newBuilder();
-                    builder.startObject().field("getRequest", sourceAsMap).endObject();
+                    builder.startObject().field("getRequest", "max[ups_adv_output_voltage]:" + max
+                            +"\navg[ups_adv_battery_run_time_remaining]:" + avg
+                            + "\nvalues[host]" + values).endObject();
                     channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
                 } catch (final Exception e) {
                     channel.sendResponse(new BytesRestResponse(channel, e));
