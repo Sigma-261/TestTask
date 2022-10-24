@@ -74,8 +74,8 @@ public class AknnRestAction extends AbstractCatAction {
 
                     XContentBuilder builder = channel.newBuilder();
                     builder.startObject().field("getRequest", "max[ups_adv_output_voltage]:" + max
-                            +"\navg[ups_adv_battery_run_time_remaining]:" + avg
-                            + "\nvalues[host]" + values).endObject();
+                            +", avg[ups_adv_battery_run_time_remaining]:" + avg
+                            + ", values[host]" + values).endObject();
                     channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
                 } catch (final Exception e) {
                     channel.sendResponse(new BytesRestResponse(channel, e));
