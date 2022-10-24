@@ -8,83 +8,80 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-/**
- * Hello world!
- *
- */
+
 public class App 
 {
     public static void main( String[] args )
     {
-        System.out.printf("avg: %f", avg());
-        System.out.printf("max: %d", max());
+        switch (args[0]) {
+            case "avg":
+                System.out.printf("avg: %f", avg(args[1]));
+                break;
+            case "max":
+                System.out.printf("max: %d", max(args[1]));
+                break;
+            case "values":
+                System.out.printf("values: %s", values(args[1]));
+                break;
+            default:
+                System.out.print("invalid command!");
+                break;
+        }
     }
 
-    static double avg(){
-
-        System.out.println("The function for finding the average number is called");
+    static List<JsonInfo> readTestData(String pathTest) {
         try {
-
             // create a reader
-            Reader reader = Files.newBufferedReader(Paths.get("C:\\testData.json"));
+            Reader reader = Files.newBufferedReader(Paths.get(pathTest));
 
             // convert JSON array to list of data from json file
             List<JsonInfo> testData = new Gson().fromJson(reader, new TypeToken<List<JsonInfo>>() {}.getType());
             if(testData == null){
                 System.out.println("File is empty!");
-                return 0;
+                return new ArrayList<>();
             }
             // close reader
             reader.close();
+            return testData;
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return new ArrayList<>();
+    }
 
-            //return avg value
-            return testData.stream()
+    static double avg(String pathTest){
+        System.out.println("\nThe function for finding the average in [ups_adv_battery_run_time_remaining] is called");
+
+        //return avg value
+        return readTestData(pathTest).stream()
                     .filter(c -> c.ups_adv_battery_run_time_remaining != 0)
                     .mapToInt(d -> d.ups_adv_battery_run_time_remaining)
                     .average()
                     .orElse(0.0);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return 0;
     }
 
-    static int max(){
+    static int max(String pathTest){
+        System.out.println("\nThe function for finding the max in [ups_adv_output_voltage] is called");
 
-        System.out.println("\nThe function for finding the max number is called");
-        try {
-
-            // create a reader
-            Reader reader = Files.newBufferedReader(Paths.get("C:\\testData.json"));
-
-            // convert JSON array to list of data from json file
-            List<JsonInfo> testData = new Gson().fromJson(reader, new TypeToken<List<JsonInfo>>() {}.getType());
-            if(testData == null){
-                System.out.println("File is empty!");
-                return 0;
-            }
-
-            // close reader
-            reader.close();
-
-            //return max value
-            return testData
+        //return max value
+        return readTestData(pathTest)
                     .stream()
                     .filter(c -> c.ups_adv_output_voltage != 0)
                     .mapToInt(v -> v.ups_adv_output_voltage)
                     .max().orElseThrow(NoSuchElementException::new);
-
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return 0;
     }
 
-    static void values(){
+    static List<String> values(String pathTest){
+        System.out.println("\nThe function for finding unique value [host] is called");
 
-        System.out.println("values");
+        //return unique value
+        return readTestData(pathTest).stream()
+                    .filter(c -> c.host != null)
+                    .map(v -> v.host)
+                    .distinct()
+                    .collect(Collectors.toList());
+
     }
 }
